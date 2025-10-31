@@ -9,7 +9,7 @@ MAP="${MAP:-de_dust2}"
 MAXPLAYERS="${MAXPLAYERS:-12}"
 PORT="${PORT:-27015}"
 STEAM_ACCOUNT="${STEAM_ACCOUNT:-anonymous}"
-PLAYIT_BIN="/usr/local/bin/playit"
+PLAYIT_BIN="/opt/cs16-server/playit"
 
 echo "🔧 Iniciando servidor: $SERVER_NAME"
 echo "🎮 Mapa: $MAP | MaxPlayers: $MAXPLAYERS | Porta: $PORT"
@@ -32,29 +32,34 @@ else
 fi
 
 # ================================
-# 🌍 INICIAR PLAYIT.GG
+# 🌍 CONFIGURAR PLAYIT.GG
 # ================================
 echo "⚙️ Preparando Playit.gg..."
 
-# Garantir que o executável do Playit exista
+# Garantir diretório do servidor
+mkdir -p /opt/cs16-server
+
+# Baixar Playit se não existir
 if [ ! -f "$PLAYIT_BIN" ]; then
   echo "⬇️ Baixando Playit.gg CLI..."
-  curl -sSL "https://playit.gg/downloads/playit-linux-amd64" -o "$PLAYIT_BIN"
+  curl -L -o "$PLAYIT_BIN" "https://github.com/playit-cloud/playit-agent/releases/latest/download/playit-linux-amd64"
 fi
 
 chmod +x "$PLAYIT_BIN"
 
+# Executar Playit em background
 echo "🌍 Iniciando túnel Playit.gg..."
-$PLAYIT_BIN &
+"$PLAYIT_BIN" &
 
-# Aguardar o Playit inicializar
+# Aguardar inicialização
 sleep 6
 
-# Mostrar instrução de vinculação, caso ainda não esteja vinculado
-if grep -q "Visit https://playit.gg/link" /proc/$(pgrep -f playit)/fd/1 2>/dev/null; then
-  echo "🔗 Acesse o link acima para vincular sua conta Playit.gg."
+# Mostrar instrução para vincular conta
+if pgrep -f playit >/dev/null; then
+  echo "🔗 Se aparecer um link 'https://playit.gg/claim', copie e acesse para vincular sua conta."
+  echo "🔎 Depois verifique seu túnel ativo em: https://playit.gg/dashboard"
 else
-  echo "✅ Playit.gg iniciado. Verifique seu painel em https://playit.gg/dashboard"
+  echo "❌ Falha ao iniciar o agente Playit.gg. Verifique se o binário foi baixado corretamente."
 fi
 
 # ================================
@@ -63,9 +68,11 @@ fi
 CFG_PATH="/opt/cs16-server/hlds/cstrike/server.cfg"
 mkdir -p "$(dirname "$CFG_PATH")"
 
-echo "hostname \"$SERVER_NAME\"" > "$CFG_PATH"
-echo "sv_lan 0" >> "$CFG_PATH"
-echo "sv_region 255" >> "$CFG_PATH"
+cat > "$CFG_PATH" <<EOF
+hostname "$SERVER_NAME"
+sv_lan 0
+sv_region 255
+EOF
 
 # ================================
 # 🚀 INICIAR HLDS

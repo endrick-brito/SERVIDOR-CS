@@ -20,7 +20,7 @@ fi
 
 # 1) Instalar HLDS (Counter-Strike 1.6) via SteamCMD
 echo "⬇️ Baixando HLDS via SteamCMD..."
-/opt/steamcmd/steamcmd.sh +login $STEAM_ACCOUNT +force_install_dir /opt/cs16-server/hlds +app_update 90 validate +quit
+/opt/steamcmd/steamcmd.sh +login $STEAM_ACCOUNT +force_install_dir /opt/cs16-server/hlds +app_set_config 90 mod cstrike +app_update 90 validate +quit
 
 # 2) Copiar AMX Mod X do repositório
 if [ -d "./amxx_plugins/addons/amxmodx" ]; then

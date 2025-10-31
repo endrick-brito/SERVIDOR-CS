@@ -36,9 +36,15 @@ echo "🔐 Autenticando ngrok..."
 /usr/local/bin/ngrok authtoken "$NGROK_AUTHTOKEN"
 
 echo "🌐 Iniciando túnel ngrok (TCP) para a porta $PORT..."
-/usr/local/bin/ngrok tcp "$PORT" > /opt/cs16-server/ngrok.log 2>&1 &
-
-echo "⚠️ ngrok iniciado. Não é possível acessar a API local no Railway. Pegue o IP público nos logs do ngrok."
+/usr/local/bin/ngrok tcp "$PORT" --log=stdout --log-format=json |
+while read -r line; do
+    echo "$line"
+    # Extrair a URL TCP pública do JSON
+    url=$(echo "$line" | jq -r '.url?')
+    if [[ $url == tcp* ]]; then
+        echo "🔗 IP público do ngrok: $url"
+    fi
+done &
 
 # 4) Ajustar server.cfg hostname dinamicamente
 if [ -f server.cfg ]; then
@@ -52,6 +58,5 @@ if [ -f ./hlds_run ]; then
   ./hlds_run -game cstrike +port "$PORT" +map "$MAP" +maxplayers "$MAXPLAYERS" +sv_name "$SERVER_NAME"
 else
   echo "❗ hlds_run não encontrado. Conteúdos do HLDS podem não ter sido instalados corretamente."
-  tail -n 100 /opt/cs16-server/ngrok.log || true
   exit 1
 fi

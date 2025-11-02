@@ -3,14 +3,14 @@ echo "Iniciando CS 1.6 + Playit..."
 
 cd /hlds/cstrike
 
-# Inicia o servidor CS 1.6 em background
+# Inicia o HLDS
 screen -dmS cs16 ./hlds_run -game cstrike -console -port 27015 -maxplayers 16 +map de_dust2
 
-# Espera o HLDS subir
+# Espera o servidor subir
 sleep 10
 
-# Faz login no Playit com o token
-playit login --token "$PLAYIT_TOKEN"
+# Registra o agente com o token
+playit agents add --token "$PLAYIT_TOKEN"
 
-# Inicia o túnel (use o nome que você criou no painel)
-playit tunnel udp --name cs16 --port 27015
+# Cria ou ativa o túnel UDP para o CS
+playit tunnels add --name SERVIDOR CS --protocol udp --port 27015

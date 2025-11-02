@@ -1,9 +1,16 @@
-# Usa imagem base leve com 32 bits (necessário pro HLDS)
-FROM i386/ubuntu:18.04
+# Usa imagem base mais atual (64 bits)
+FROM ubuntu:20.04
 
-# Instala dependências
-RUN dpkg --add-architecture i386 && apt update && apt install -y \
-    lib32gcc1 wget curl tar screen unzip ca-certificates && \
+# Evita interação do apt
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Instala dependências 32 bits e utilitários
+RUN dpkg --add-architecture i386 && \
+    apt update && \
+    apt install -y \
+        gcc-multilib g++-multilib \
+        lib32z1 lib32ncurses6 lib32stdc++6 \
+        wget curl tar screen unzip ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 # Diretório de trabalho
@@ -27,4 +34,5 @@ RUN wget https://github.com/playit-cloud/playit-agent/releases/latest/download/p
 # Porta padrão CS
 EXPOSE 27015/udp
 
+# Comando inicial
 CMD ["/start.sh"]

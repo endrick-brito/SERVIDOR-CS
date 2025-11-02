@@ -1,35 +1,30 @@
-FROM ubuntu:20.04
+# Usa imagem base leve com 32 bits (necessário pro HLDS)
+FROM i386/ubuntu:18.04
 
-ARG DEBIAN_FRONTEND=noninteractive
-RUN dpkg --add-architecture i386 && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-      curl wget tar unzip bzip2 ca-certificates lib32gcc1 lib32stdc++6 procps jq ca-certificates && \
+# Instala dependências
+RUN dpkg --add-architecture i386 && apt update && apt install -y \
+    lib32gcc1 wget curl tar screen unzip ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-# Instalar SteamCMD
-RUN mkdir -p /opt/steamcmd && \
-    cd /opt/steamcmd && \
-    wget https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz -O steamcmd_linux.tar.gz && \
+# Diretório de trabalho
+WORKDIR /hlds
+
+# Instala o servidor CS 1.6 via SteamCMD
+RUN wget https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz && \
     tar -xvzf steamcmd_linux.tar.gz && \
-    rm steamcmd_linux.tar.gz
+    ./steamcmd.sh +login anonymous +force_install_dir /hlds/cstrike \
+    +app_update 90 validate +quit
 
-# Instalar ngrok
-RUN wget https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip -O /tmp/ngrok.zip && \
-    unzip /tmp/ngrok.zip -d /usr/local/bin && \
-    rm /tmp/ngrok.zip
+# Copia config e scripts locais
+COPY server.cfg /hlds/cstrike/cstrike/server.cfg
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
 
-WORKDIR /opt/cs16-server
+# Instala o agente Playit
+RUN wget https://github.com/playit-cloud/playit-agent/releases/latest/download/playit-linux-amd64 \
+    -O /usr/local/bin/playit && chmod +x /usr/local/bin/playit
 
-# Copiar scripts e configs
-COPY start.sh /opt/cs16-server/start.sh
-COPY server.cfg /opt/cs16-server/server.cfg
-COPY amxx_plugins /opt/cs16-server/amxx_plugins
-
-RUN chmod +x /opt/cs16-server/start.sh
-
-# Expor portas (nota: Railway pode não mapear UDP; ngrok TCP será usado)
+# Porta padrão CS
 EXPOSE 27015/udp
-EXPOSE 27015/tcp
 
-ENTRYPOINT ["/opt/cs16-server/start.sh"]
+CMD ["/start.sh"]
